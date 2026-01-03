@@ -18,11 +18,11 @@ fn digits_to_num(digits: []const u8) u128 {
     return n;
 }
 
-fn max_joltage_with_n_batteries(n: usize, line: []const u8) u128 {
+fn max_joltage_with_n_batteries(n: usize, line: []const u8) !u128 {
     var buf: [64]u8 = undefined;
     var num = buf[0..n];
     std.mem.copyForwards(u8, num[0..n], line[0..n]);
-    var prev_num = digits_to_num(&num);
+    var prev_num = digits_to_num(num[0..]);
 
     for (n..line.len) |next_idx| {
         for (0..num.len) |ignore| {
@@ -37,8 +37,10 @@ fn max_joltage_with_n_batteries(n: usize, line: []const u8) u128 {
             prev_num = max(prev_num, curr_num);
         }
 
-        _ = try std.fmt.bufPrint(&num, "{}", .{prev_num});
+        _ = try std.fmt.bufPrint(num, "{}", .{prev_num});
     }
+
+    return prev_num;
 }
 
 pub fn part1(data: []const u8) !u128 {
@@ -48,7 +50,7 @@ pub fn part1(data: []const u8) !u128 {
     var cnt: u128 = 0;
 
     while (lines.next()) |line| {
-        cnt += max_joltage_with_n_batteries(2, line);
+        cnt += try max_joltage_with_n_batteries(2, line);
     }
 
     return cnt;
@@ -61,7 +63,7 @@ pub fn part2(data: []const u8) !u128 {
     var cnt: u128 = 0;
 
     while (lines.next()) |line| {
-        cnt += max_joltage_with_n_batteries(12, line);
+        cnt += try max_joltage_with_n_batteries(12, line);
     }
     return cnt;
 }
