@@ -6,20 +6,9 @@ pub fn part1(data: []const u8) !u64 {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
-
-    const trim = std.mem.trim(u8, data, "\n");
-    var lines = std.mem.splitScalar(u8, trim, '\n');
-
     var map = std.AutoHashMap(Point, u8).init(allocator);
-
     defer map.deinit();
-    var y: i32 = 0;
-    while (lines.next()) |line| {
-        for (line, 0..) |c, x| {
-            try map.put(Point{ .x = @intCast(x), .y = y }, c);
-        }
-        y += 1;
-    }
+    try fillmap(data, &map);
 
     var it = map.iterator();
     var removed: u64 = 0;
@@ -37,55 +26,13 @@ pub fn part1(data: []const u8) !u64 {
     return removed;
 }
 
-fn count_rolls(key: Point, map: std.AutoHashMap(Point, u8)) u8 {
-    var rolls: u8 = 0;
-    rolls += if ((map.get(key.up()) orelse '.') == '@') 1 else 0;
-    rolls += if ((map.get(key.down()) orelse '.') == '@') 1 else 0;
-    rolls += if ((map.get(key.left()) orelse '.') == '@') 1 else 0;
-    rolls += if ((map.get(key.right()) orelse '.') == '@') 1 else 0;
-    rolls += if ((map.get(key.up().left()) orelse '.') == '@') 1 else 0;
-    rolls += if ((map.get(key.up().right()) orelse '.') == '@') 1 else 0;
-    rolls += if ((map.get(key.down().left()) orelse '.') == '@') 1 else 0;
-    rolls += if ((map.get(key.down().right()) orelse '.') == '@') 1 else 0;
-    return rolls;
-}
-
-const Point = struct {
-    x: i32,
-    y: i32,
-
-    pub fn up(self: Point) Point {
-        return Point{ .x = self.x, .y = self.y - 1 };
-    }
-    pub fn down(self: Point) Point {
-        return Point{ .x = self.x, .y = self.y + 1 };
-    }
-    pub fn left(self: Point) Point {
-        return Point{ .x = self.x - 1, .y = self.y };
-    }
-    pub fn right(self: Point) Point {
-        return Point{ .x = self.x + 1, .y = self.y };
-    }
-};
-
 pub fn part2(data: []const u8) !u128 {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
-
-    const trim = std.mem.trim(u8, data, "\n");
-    var lines = std.mem.splitScalar(u8, trim, '\n');
-
     var map = std.AutoHashMap(Point, u8).init(allocator);
-
     defer map.deinit();
-    var y: i32 = 0;
-    while (lines.next()) |line| {
-        for (line, 0..) |c, x| {
-            try map.put(Point{ .x = @intCast(x), .y = y }, c);
-        }
-        y += 1;
-    }
+    try fillmap(data, &map);
 
     var removed: u64 = 0;
     var changed = true;
@@ -112,6 +59,50 @@ pub fn part2(data: []const u8) !u128 {
 
     return removed;
 }
+
+fn fillmap(data: []const u8, map: *std.AutoHashMap(Point, u8)) !void {
+    const trim = std.mem.trim(u8, data, "\n");
+    var lines = std.mem.splitScalar(u8, trim, '\n');
+
+    var y: i32 = 0;
+    while (lines.next()) |line| {
+        for (line, 0..) |c, x| {
+            try map.put(Point{ .x = @intCast(x), .y = y }, c);
+        }
+        y += 1;
+    }
+}
+
+fn count_rolls(key: Point, map: std.AutoHashMap(Point, u8)) u8 {
+    var rolls: u8 = 0;
+    if ((map.get(key.up()) orelse '.') == '@') rolls += 1;
+    if ((map.get(key.down()) orelse '.') == '@') rolls += 1;
+    if ((map.get(key.left()) orelse '.') == '@') rolls += 1;
+    if ((map.get(key.right()) orelse '.') == '@') rolls += 1;
+    if ((map.get(key.up().left()) orelse '.') == '@') rolls += 1;
+    if ((map.get(key.up().right()) orelse '.') == '@') rolls += 1;
+    if ((map.get(key.down().left()) orelse '.') == '@') rolls += 1;
+    if ((map.get(key.down().right()) orelse '.') == '@') rolls += 1;
+    return rolls;
+}
+
+const Point = struct {
+    x: i32,
+    y: i32,
+
+    pub fn up(self: Point) Point {
+        return Point{ .x = self.x, .y = self.y - 1 };
+    }
+    pub fn down(self: Point) Point {
+        return Point{ .x = self.x, .y = self.y + 1 };
+    }
+    pub fn left(self: Point) Point {
+        return Point{ .x = self.x - 1, .y = self.y };
+    }
+    pub fn right(self: Point) Point {
+        return Point{ .x = self.x + 1, .y = self.y };
+    }
+};
 
 test "example part 1" {
     try std.testing.expectEqual(13, part1(example));
