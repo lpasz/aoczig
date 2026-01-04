@@ -19,7 +19,7 @@ pub fn part1(data: []const u8) !u64 {
         var numbers = std.mem.splitScalar(u8, line, ' ');
         var row = std.ArrayList(u64).init(allocator);
 
-        var x: u64 = 0;
+        var x: usize = 0;
         while (numbers.next()) |n| {
             if (n.len == 0) continue;
 
@@ -51,7 +51,6 @@ pub fn part1(data: []const u8) !u64 {
 const Op = enum {
     sum,
     multiply,
-    none,
     pub fn new(c: u8) Op {
         return switch (c) {
             '+' => .sum,
@@ -63,7 +62,6 @@ const Op = enum {
         return switch (self) {
             .sum => total + n,
             .multiply => total * n,
-            else => unreachable,
         };
     }
 };
@@ -89,7 +87,7 @@ pub fn part2(data: []const u8) !u64 {
     const col_count = matrix.items[0].len;
 
     var total: u64 = 0;
-    var operation: Op = .none;
+    var operation: Op = undefined;
     var curr: u64 = 0;
     for (0..col_count) |x| {
         var buf: [64]u8 = undefined;
