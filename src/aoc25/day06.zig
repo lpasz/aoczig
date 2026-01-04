@@ -64,7 +64,8 @@ pub fn part2(data: []const u8) !u64 {
         const copy = try allocator.dupe(u8, line);
         try matrix.append(copy);
     }
-    const transp = try transpose(allocator, matrix);
+
+    const transp = try transpose(allocator, matrix.items);
     defer {
         for (transp.items) |row| allocator.free(row);
         transp.deinit();
@@ -104,19 +105,22 @@ pub fn part2(data: []const u8) !u64 {
 
 fn transpose(
     alloc: std.mem.Allocator,
-    rows: std.ArrayList([]u8),
+    rows: []const []const u8,
 ) !std.ArrayList([]u8) {
-    const row_count = rows.items.len;
-    const col_count = rows.items[0].len;
+    if (rows.len == 0) return error.EmptyInput;
+
+    const row_count = rows.len;
+    const col_count = rows[0].len;
 
     var cols = std.ArrayList([]u8).init(alloc);
+    try cols.ensureTotalCapacity(col_count);
 
     for (0..col_count) |c| {
         var col = try alloc.alloc(u8, row_count);
         for (0..row_count) |r| {
-            col[r] = rows.items[r][c];
+            col[r] = rows[r][c];
         }
-        try cols.append(col);
+        cols.appendAssumeCapacity(col);
     }
 
     return cols;
