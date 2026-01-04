@@ -61,8 +61,8 @@ const Op = enum {
     }
     pub fn apply(self: Op, total: u64, n: u64) u64 {
         return switch (self) {
-            Op.sum => total + n,
-            Op.multiply => total * n,
+            .sum => total + n,
+            .multiply => total * n,
             else => unreachable,
         };
     }
@@ -114,7 +114,7 @@ pub fn part2(data: []const u8) !u64 {
         // Change operator, and reinit the curr value.
         const last = buf[len - 1];
         if (last == '+' or last == '*') {
-            operation = op.new(last);
+            operation = Op.new(last);
             curr = try std.fmt.parseInt(u64, buf[0..(len - 1)], 10);
         } else {
             const num = try std.fmt.parseInt(u64, buf[0..len], 10);
