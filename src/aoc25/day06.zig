@@ -48,6 +48,26 @@ pub fn part1(data: []const u8) !u64 {
     return total;
 }
 
+const Op = enum {
+    sum,
+    multiply,
+    none,
+    pub fn new(c: u8) Op {
+        return switch (c) {
+            '+' => .sum,
+            '*' => .multiply,
+            else => unreachable,
+        };
+    }
+    pub fn apply(self: Op, total: u64, n: u64) u64 {
+        return switch (self) {
+            Op.sum => total + n,
+            Op.multiply => total * n,
+            else => unreachable,
+        };
+    }
+};
+
 pub fn part2(data: []const u8) !u64 {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
@@ -65,65 +85,45 @@ pub fn part2(data: []const u8) !u64 {
         try matrix.append(copy);
     }
 
-    const transp = try transpose(allocator, matrix.items);
-    defer {
-        for (transp.items) |row| allocator.free(row);
-        transp.deinit();
-    }
+    const row_count = matrix.items.len;
+    const col_count = matrix.items[0].len;
 
     var total: u64 = 0;
-    var operation: u8 = '+';
+    var operation: Op = .none;
     var curr: u64 = 0;
-    for (transp.items) |tt| {
-        const t = std.mem.trim(u8, tt, " ");
+    for (0..col_count) |x| {
+        var buf: [64]u8 = undefined;
+        var len: usize = 0;
 
-        if (t.len == 0) {
+        for (0..row_count) |y| {
+            const c = matrix.items[y][x];
+            if (std.ascii.isDigit(c) or c == '*' or c == '+') {
+                buf[len] = c;
+                len += 1;
+            }
+        }
+
+        // Empty Col
+        if (len == 0) {
             total += curr;
-            continue;
-        }
-        if (t[t.len - 1] == '*') {
-            operation = '*';
-            const n = std.mem.trim(u8, t[0..(t.len - 1)], " ");
-            curr = try std.fmt.parseInt(u64, n, 10);
-            continue;
-        }
-        if (t[t.len - 1] == '+') {
-            operation = '+';
-            const n = std.mem.trim(u8, t[0..(t.len - 1)], " ");
-            curr = try std.fmt.parseInt(u64, n, 10);
+            curr = 0;
             continue;
         }
 
-        const n = try std.fmt.parseInt(u64, t, 10);
-
-        if (operation == '*') curr *= n;
-        if (operation == '+') curr += n;
+        // If we found and operator at the end of column.
+        // Change operator, and reinit the curr value.
+        const last = buf[len - 1];
+        if (last == '+' or last == '*') {
+            operation = op.new(last);
+            curr = try std.fmt.parseInt(u64, buf[0..(len - 1)], 10);
+        } else {
+            const num = try std.fmt.parseInt(u64, buf[0..len], 10);
+            curr = operation.apply(curr, num);
+        }
     }
     total += curr;
+
     return total;
-}
-
-fn transpose(
-    alloc: std.mem.Allocator,
-    rows: []const []const u8,
-) !std.ArrayList([]u8) {
-    if (rows.len == 0) return error.EmptyInput;
-
-    const row_count = rows.len;
-    const col_count = rows[0].len;
-
-    var cols = std.ArrayList([]u8).init(alloc);
-    try cols.ensureTotalCapacity(col_count);
-
-    for (0..col_count) |c| {
-        var col = try alloc.alloc(u8, row_count);
-        for (0..row_count) |r| {
-            col[r] = rows[r][c];
-        }
-        cols.appendAssumeCapacity(col);
-    }
-
-    return cols;
 }
 
 test "example part 1" {
